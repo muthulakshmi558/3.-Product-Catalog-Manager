@@ -1,16 +1,23 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+import os
 
 app = Flask(__name__)
 
-# MySQL connection string
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://username:password@hostname:port/dbname'
+# Boss-style: use environment variables for DB connection
+DB_USER = os.environ.get('DB_USER', 'root')          # fallback for local dev
+DB_PASSWORD = os.environ.get('DB_PASSWORD', '56789')
+DB_HOST = os.environ.get('DB_HOST', 'localhost')
+DB_PORT = os.environ.get('DB_PORT', '3306')
+DB_NAME = os.environ.get('DB_NAME', 'product_db')
+
+app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'mysecretkey123456789'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'mysecretkey123456789')  # secure fallback
 
 db = SQLAlchemy(app)
 
-# Model
+# =================== Model ===================
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
@@ -21,18 +28,17 @@ class Product(db.Model):
     def __repr__(self):
         return f'<Product {self.name}>'
 
-# Create tables
+# Create tables boss-style
 with app.app_context():
     db.create_all()
 
-# View all products
+# =================== Routes ===================
 @app.route('/')
 def index():
     products = Product.query.all()
     in_stock_products = Product.query.filter_by(in_stock=True).all()
     return render_template('index.html', products=products, in_stock_products=in_stock_products)
 
-# Add product
 @app.route('/add', methods=['GET', 'POST'])
 def add_product():
     if request.method == 'POST':
@@ -49,7 +55,6 @@ def add_product():
 
     return render_template('add_product.html')
 
-# Edit product
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
     product = Product.query.get_or_404(id)
@@ -66,7 +71,6 @@ def edit_product(id):
 
     return render_template('edit_product.html', product=product)
 
-# Delete product
 @app.route('/delete/<int:id>')
 def delete_product(id):
     product = Product.query.get_or_404(id)
@@ -75,5 +79,8 @@ def delete_product(id):
     flash('Product deleted successfully!', 'danger')
     return redirect(url_for('index'))
 
+# =================== Main ===================
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Boss-style: detect production vs local
+    debug_mode = os.environ.get('FLASK_DEBUG', '1') == '1'
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode)
