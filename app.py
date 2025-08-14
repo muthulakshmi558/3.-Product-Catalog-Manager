@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # ------------------ Environment Variables ------------------
-DB_USER = os.environ.get('DB_USER', 'root')          # local fallback
+DB_USER = os.environ.get('DB_USER', 'root')          
 DB_PASSWORD = os.environ.get('DB_PASSWORD', '56789')
 DB_HOST = os.environ.get('DB_HOST', 'localhost')
 DB_PORT = os.environ.get('DB_PORT', '3306')
@@ -47,7 +47,7 @@ def index():
 def add_product():
     if request.method == 'POST':
         name = request.form['name']
-        price = request.form['price']
+        price = float(request.form['price'])
         in_stock = 'in_stock' in request.form
         description = request.form['description']
 
@@ -65,7 +65,7 @@ def edit_product(id):
 
     if request.method == 'POST':
         product.name = request.form['name']
-        product.price = request.form['price']
+        product.price = float(request.form['price'])
         product.in_stock = 'in_stock' in request.form
         product.description = request.form['description']
 
@@ -85,6 +85,5 @@ def delete_product(id):
 
 # =================== Main ===================
 if __name__ == '__main__':
-    # Detect debug mode from environment
     debug_mode = os.environ.get('FLASK_DEBUG', '1') == '1'
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=debug_mode)
